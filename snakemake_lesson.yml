@@ -1,0 +1,20 @@
+# attempt at making a minimal conda env for the lesson "Snakemake for Bioinformatics"
+# https://carpentries-incubator.github.io/snakemake-novice-bioinformatics
+# conda env create --file snakemake_lesson.yml --force
+name: snakemake_lesson
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - bioconda::rename
+  - conda-forge:coreutils
+  - fastqc
+  - fastx_toolkit
+  - gnuplot
+  - graphicsmagick
+  - graphviz
+  - kallisto=0.46.2
+  - multiqc
+  - salmon=1.4.0
+  - snakemake=5
