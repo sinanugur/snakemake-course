@@ -366,5 +366,25 @@ echo "Episode 6 "
 
 
 fastqc reads/ref_1_1.fq
+#
+
+#see sample fastqc.Snakefile: ../../sample_snakefiles/fastqc.Snakefile
+
+########################################################################################################################
+########################################################################################################################
+############ Episode 7
+############
+echo "Episode 7 "
 
 
+#see sample ep07.Snakefile: ../../reference_snakefiles/ep07.Snakefile
+
+cat ../../reference_snakefiles/ep07.Snakefile > Snakefile
+
+#to generate the dag plot
+snakemake --rulegraph -j1 -p multiqc | dot -Tpng > dag.png
+
+#run the pipeline
+snakemake -j1 -p multiqc
+
+#multiqc rule can be moved to up trigger auto run
