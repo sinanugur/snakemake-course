@@ -269,7 +269,8 @@ snakemake -f --dag kallisto.etoh60_1/abundance.h5 | dot -Tpng > dag.png #create 
 ############
 echo "Episode 5 "
 
-
+#we have to do some processing to the reads due to inconsistency in the naming
+#Snakemake prefers to work with consistent file names and extensions
 if [ ! -d original_reads ]; then
     mv reads original_reads
     mkdir reads
@@ -287,7 +288,6 @@ fi
 
 
 cat << 'EOF' > Snakefile
-
 # Input conditions and replicates to process
 CONDITIONS = ["ref", "etoh60", "temp33"]
 REPLICATES = ["1", "2", "3"]
@@ -332,6 +332,9 @@ EOF
 
 
 # snakemake -j1 -p all_counts
+# snakemake -j1 -p -n #dry run to check
+# snakemake  -j1 --dag | dot -Tpng > dag.png  #generate dag plot and check which files are generated
+# are the any missing??
 
 snakemake -j1 -p # without telling the target, it will run the first rule in the Snakefile
 
@@ -388,20 +391,20 @@ EOF
 
 ########################################################################################################################
 ########################################################################################################################
-############ Episode 6
+############ Episode 6 Handling awkward programs
 ############
 echo "Episode 6 "
 
 
 
 fastqc reads/ref_1_1.fq
-#
+# placeholders vs wildcards
 
 #see sample fastqc.Snakefile: ../../sample_snakefiles/fastqc.Snakefile
 
 ########################################################################################################################
 ########################################################################################################################
-############ Episode 7
+############ Episode 7 Finishing the basic workflow
 ############
 echo "Episode 7 "
 
@@ -414,6 +417,22 @@ cat ../../reference_snakefiles/ep07.Snakefile > Snakefile
 snakemake --rulegraph -j1 -p multiqc | dot -Tpng > dag.png
 
 #run the pipeline
-snakemake -j1 -p multiqc
+snakemake -j5 -p multiqc
 
 #multiqc rule can be moved to up trigger auto run
+#it is possible to use CONDITIONS = glob_wildcards("reads/{condition}_1_1.fq").condition
+
+#test with different number of cores
+#time snakemake -j5 -p multiqc
+#snakemake -j5 multiqc  
+#snakemake -j1 multiqc
+
+
+
+
+
+#add rule all counts for trimmed back
+#rule all_counts:
+#    input:
+#        expand("trimmed.{cond}_{rep}_{end}.fq.count", cond=CONDITIONS, rep=REPLICATES, end=["1","2"])
+
