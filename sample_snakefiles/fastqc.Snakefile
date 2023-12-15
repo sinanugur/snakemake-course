@@ -7,6 +7,12 @@ rule fastqc:
         "fastqc {input}"
 
 rule fastqc:
+    output: directory("{indir}.fastqc.{myfile}")
+    input:  "{indir}/{myfile}.fq"
+    shell:
+        "fastqc -o {output} {input}"
+
+rule fastqc:
     output:
         html = "{indir}.{myfile}_fastqc.html",
         zip  = "{indir}.{myfile}_fastqc.zip"
