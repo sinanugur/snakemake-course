@@ -1,13 +1,13 @@
 
 #!/bin/zsh
-
+#based on https://carpentries-incubator.github.io/snakemake-novice-bioinformatics
 ########################################################################################################################
 ########################################################################################################################
-############ Episode 1
+############ Episode 1 Running commands with Snakemake
 ############
 echo "Episode 1 "
 
-if [ -d yeast ]; then #better to run under yeast directory
+if [ -d yeast ]; then #better to run under yeast directory so go to yeast directory...
     cd yeast
     ls reads
 fi
@@ -23,6 +23,10 @@ wc -l reads/ref1_1.fq
 wc -l reads/ref1_1.fq > ref1_1.fq.count
 head -v *.count
 
+#The sample dataset represents a transcriptomics experiment in brewer’s yeast (Saccharomyces cerevisiae) under three conditions.
+#Three replicates.
+
+
 cat << 'EOF' > Snakefile
 rule countlines:
     output: "ref1_1.fq.count"
@@ -33,7 +37,12 @@ EOF
 
 snakemake -j1 -F -p ref1_1.fq.count
 
+#quotation, indendation, and colons are important in Snakefile
+#snakemake --help | less #to see all options
+#count fastq reads rather than lines
 echo $(( $(wc -l <reads/ref1_1.fq) / 4 ))
+
+
 
 cat << 'EOF' > Snakefile
 rule countreads:
@@ -52,9 +61,14 @@ EOF
 snakemake -j1 -F -p ref1_1.fq.count etoh60_1_1.fq.count
 
 
+#Before running Snakemake you need to write a Snakefile
+#A Snakefile is a text file which defines a list of rules
+#Rules have inputs, outputs, and shell commands to be run
+#You tell Snakemake what file to make and it will run the shell command defined in the appropriate rule
+
 ########################################################################################################################
 ########################################################################################################################
-############ Episode 2
+############ Episode 2 Placeholders and wildcards
 ############
 echo "Episode 2 "
 
@@ -67,6 +81,11 @@ rule countreads:
         "echo $(( $(wc -l <{input}) / 4 )) > {output}"
 EOF
 
+#input output are placeholders
+#myfile is a wildcard
+
+#you may check https://docs.google.com/presentation/d/1GrrW0lbFre4NzRgS3UlgV_Zr3eBQIvMiQa3s-acNT6g/edit?usp=sharing
+
 snakemake -j1 -F -p temp33_1_1.fq.count
 
 cat temp33_1_1.fq.count
@@ -75,17 +94,22 @@ cat temp33_1_1.fq.count
 echo "this will fail due to missing input file"
 snakemake -j1 -F -p wibble_1.fq.count
 
-#dry run
+#dry run, dry run, dry run
 snakemake -n -F -p temp33_1_1.fq.count
 
+#snakemake -f --dag temp33_1_1.fq.count | dot -Tpng > dag.png 
+#snakemake --rulegraph -j1 -p temp33_1_1.fq.count | dot -Tpng > dag.png
+
+
+#lets another rule to trim reads BUT they are not connected, yet...
 cat << 'EOF' > Snakefile
-# Trim any FASTQ reads for base quality
 rule countreads:
     output: "{myfile}.fq.count"
     input:  "reads/{myfile}.fq"
     shell:
         "echo $(( $(wc -l <{input}) / 4 )) > {output}"
 
+# Trim any FASTQ reads for base quality
 rule trimreads:
     output: "trimmed/{myfile}.fq"
     input:  "reads/{myfile}.fq"
@@ -96,9 +120,10 @@ EOF
 snakemake -j1 -F -p trimmed/ref1_1.fq trimmed/ref1_2.fq
 
 
+
 ########################################################################################################################
 ########################################################################################################################
-############ Episode 3
+############ Episode 3 Chaining rules
 ############
 echo "Episode 3 "
 
@@ -119,9 +144,12 @@ EOF
 
 snakemake -j1 -F -p trimmed.ref1_1.fq.count
 cat trimmed.ref1_1.fq.count
+#you may run for reads.ref1_1.fq.count
 
+
+# now we can add another rule to run kallisto and chain them
+# kallisto requires trimmed reads
 cat << 'EOF' > Snakefile
-
 rule countreads:
     output: "{indir}.{myfile}.fq.count"
     input:  "{indir}/{myfile}.fq"
@@ -133,8 +161,6 @@ rule trimreads:
     input:  "reads/{myfile}.fq"
     shell:
         "fastq_quality_trimmer -t 20 -l 100 -o {output} <{input}"
-
-
 
 rule kallisto_quant:
     output:
@@ -154,6 +180,7 @@ echo "this will fail due to missing index"
 snakemake -j1 -F -p kallisto.ref1/abundance.h5
 
 
+#now we should add kallisto index rule and chain it
 cat << 'EOF' > Snakefile
 rule countreads:
     output: "{indir}.{myfile}.fq.count"
@@ -190,18 +217,20 @@ rule kallisto_index:
 EOF
 
 
-echo "this will fail due to typo" #abundances.h5
-snakemake -j1 -F -p kallisto.ref1/abundances.h5
-
-
-
-#multiple samples to process
+#multiple samples to process, it is possible to run parallel
 snakemake -j1 -F -p kallisto.ref1/abundance.h5  kallisto.temp33_1/abundance.h5
 
+#visualize the DAG
+#snakemake -f --dag kallisto.ref1/abundance.h5 | dot -Tpng > dag.png 
+#snakemake --rulegraph -j1 -p kallisto.ref1/abundance.h5 | dot -Tpng > dag.png
+
+
+#beware of typos
+#snakemake -j1 -F -p kallisto.ref1/abundances.h5
 
 ########################################################################################################################
 ########################################################################################################################
-############ Episode 4
+############ Episode 4 How Snakemake plans what jobs to run
 ############
 echo "Episode 4 "
 
@@ -236,7 +265,7 @@ snakemake -f --dag kallisto.etoh60_1/abundance.h5 | dot -Tpng > dag.png #create 
 
 ########################################################################################################################
 ########################################################################################################################
-############ Episode 5
+############ Episode 5 Processing lists of inputs
 ############
 echo "Episode 5 "
 
